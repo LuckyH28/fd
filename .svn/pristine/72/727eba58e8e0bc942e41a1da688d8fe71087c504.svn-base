@@ -1,0 +1,8 @@
+#redis server info
+redis.ip=172.17.60.81
+#redis.ip=192.168.15.240
+#redis.port=6380
+redis.port=19000
+redis.password=test123
+redis.pool.testOnBorrow=true
+redis.pool.maxTotal=8024

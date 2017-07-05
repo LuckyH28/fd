@@ -1,0 +1,50 @@
+#Topic Info.TopicName consists of  product_name/service_name/OwnerNo/,OwnerNo is from input.
+#If the call method doesn't pass product_name/service_name,then use the follow default value
+
+service_name=51SAAS
+consumer_name=51IMFD
+
+
+SL_CA_PRIVATE_KEY=
+SL_CA_PUBLIC_KEY=
+SL_CA_TRUST=
+SL_CA_PASSWORD=
+#MQTT Server ConnectionInfo
+mqtt.server.address = tcp://192.168.15.179:1883
+#mqtt.server.address = tcp://192.168.15.250:1883
+#mqtt.client.id = mqtt_server1  根据本地主机名进行分配
+mqtt.client.username = admin
+mqtt.client.password = admin
+
+#Rabbitmq Server ConnectionInfo
+rabbitmq_server_ip=192.168.15.179
+rabbitmq_server_port=5672
+rabbitmq_server_username=admin
+rabbitmq_server_password=admin
+#Rabbitmq every listen consumer size
+rabbitmq_listener_consumer=1
+
+#redis server info
+redis.ip=192.168.15.179
+#redis.port=6380
+redis.port=6379
+redis.password=aisino@123
+redis.pool.testOnBorrow=true
+redis.pool.maxTotal=8024
+
+#Mysql JDBC ConnectionInfo
+jdbc.driverClassName=com.mysql.jdbc.Driver
+jdbc.url=jdbc\:mysql\://192.168.15.179\:3306/51saas?serverTimezone\=UTC&useUnicode\=true&characterEncoding\=UTF-8&useSSL\=false
+jdbc.username=root
+jdbc.password=123456
+
+#Zookeeper cluster connectionInfo
+zookeeper.cluster.ip=192.168.15.179:2181
+ #,192.168.8.224:2181
+
+zk.IpPort=192.168.15.179:2181
+zk.zkSessionTimeout=60000
+zk.userName=Admin
+zk.password=password
+zk.autoRegisterTask=true
+zk.rootPath=/uncode109/schedule

@@ -1,0 +1,10 @@
+#Rabbitmq Server ConnectionInfo
+rabbitmq_server_ip=172.17.60.97
+#rabbitmq_server_ip=192.168.15.179
+rabbitmq_server_port=5672
+rabbitmq_server_username=admin
+rabbitmq_server_password=admin
+
+rabbitmq_server_channel_size=1
+rabbitmq_mqtt_Level1_queueName=""
+rabbitmq_mqtt_Level2_queueName=""

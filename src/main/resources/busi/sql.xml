@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//config.spring.mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.aisino.domain.einvoice">
+
+    <!-- topic message sql-->
+    <!-- 保存消息 -->
+    <insert id="insertTopicInfoEntity" parameterType="topicInfoEntity">
+        insert into msg_pub_info(PUBLISHER,SUBSCRIBER,DEVICENO,TOPIC,MESSAGE,UPDATE_TIME) VALUES (#{publisher},#{subscriber},#{deviceNo},#{topic},#{message},now())
+    </insert>
+    <!-- 删除消息 -->
+    <delete id="deleteTopicInfoEntity" parameterType="topicInfoEntity">
+        DELETE FROM msg_pub_info where id = #{id}
+    </delete>
+    <!-- 查询消息 -->
+    <select id="selectTopicInfoEntityList" resultType="topicInfoEntity">
+        select ID as id, PUBLISHER as publisher, SUBSCRIBER as subscriber,DEVICENO as deviceNo, TOPIC as topic, MESSAGE as message ,UPDATE_TIME as updateTime FROM msg_pub_info order by UPDATE_TIME DESC limit 10
+    </select>
+    <!-- 查询某设备消息 -->
+    <select id="selectTopicInfoEntityListByDeviceNo" resultType="topicInfoEntity" parameterType="java.lang.String">
+        select ID as id, PUBLISHER as publisher, SUBSCRIBER as subscriber,DEVICENO as deviceNo, TOPIC as topic, MESSAGE as message,UPDATE_TIME as updateTime FROM msg_pub_info where DEVICENO= #{deviceNo}
+    </select>
+
+
+    <!-- save队列信息-->
+    <insert id="insertQueueInfoEntity" parameterType="queueInfoEntity">
+        insert into t_queue_info(QUEUE_NAME,QUEUE_SERVICE,QUEUE_CONSUMER,QUEUE_BUSI_TYPE,QUEUE_NO,QUEUE_LEVEL,UPDATE_TIME) VALUES (#{queueName},#{queueService},#{queueConsumer},#{queueBusiType},#{queueNO},#{queueLevel},now())
+    </insert>
+    <!-- save队列list信息-->
+    <insert id="insertQueueList" parameterType="java.util.List">
+        insert into t_queue_info(QUEUE_NAME,QUEUE_SERVICE,QUEUE_CONSUMER,QUEUE_BUSI_TYPE,QUEUE_NO,QUEUE_LEVEL,UPDATE_TIME) VALUES
+        <foreach collection="list" item="item" index="index" separator="," >
+            (#{item.queueName},#{item.queueService},#{item.queueConsumer},#{item.queueBusiType},#{item.queueNO},#{item.queueLevel},now())
+        </foreach>
+    </insert>
+    <!-- query队列信息-->
+    <select id="selectQueueList" resultType="queueInfoEntity">
+        select ID as id,QUEUE_NAME as queueName,QUEUE_SERVICE as queueService,QUEUE_CONSUMER as queueConsumer,QUEUE_BUSI_TYPE as queueBusiType,QUEUE_NO as queueNO,QUEUE_LEVEL as queueLevel, UPDATE_TIME as updateTime FROM t_queue_info
+        where QUEUE_BUSI_TYPE = "01"
+        <!-- select ID ,QUEUE_NAME ,QUEUE_SERVICE,QUEUE_CONSUMER,QUEUE_SCOPE,QUEUE_TYPE FROM t_queue_info -->
+    </select>
+    
+     <!-- query队列信息-->
+    <select id="selectQueue" resultType="String" parameterType="queueInfoEntity">
+        select QUEUE_NAME as queueName FROM t_queue_info
+    	where  QUEUE_SERVICE = #{queueService} and QUEUE_CONSUMER = #{queueConsumer} and QUEUE_LEVEL=#{queueLevel}
+    </select>
+
+	<!--  --> 
+    <select id="selectScheduleJobList" resultType="scheduleJobEntity">
+       select  ID as id , JOB_NO as jobNo,JOB_NAME as jobName,JOB_GROUP as jobGroup,JOB_STATUS as jobStatus,IS_CONCURRENT as isConcurrent,CRON_EXPRESSION as cronExpression,DESCRIPTION as description,JOB_BUSI_TYPE as jobBusiType,SPRING_ID as springID ,UPDATE_TIME as updateTime  from t_schedule_job_info
+       where JOB_BUSI_TYPE = "01" and SPRING_ID = "republishTask"
+    </select>
+    
+    <insert id="insertScheduleJob" parameterType="scheduleJobEntity">
+    	insert into t_schedule_job_info(JOB_NO,JOB_NAME,JOB_GROUP,JOB_STATUS,IS_CONCURRENT,CRON_EXPRESSION,DESCRIPTION,JOB_BUSI_TYPE,SPRING_ID,UPDATE_TIME) 
+    	VALUES (#{jobNo},#{jobName},#{jobGroup},#{jobStatus},#{isConcurrent},#{cronExpression},#{description},#{jobBusiType},#{springID},now())
+    </insert>
+    
+    <update id="updateScheduleJob" parameterType="scheduleJobEntity">
+    	update t_schedule_job_info set CRON_EXPRESSION = #{cronExpression} where JOB_BUSI_TYPE=#{jobBusiType} and SPRING_ID = #{springID}
+    </update>
+    
+    <delete id="deleteScheduleJob" parameterType="scheduleJobEntity">
+    	delete  from  t_schedule_job_info where JOB_BUSI_TYPE=#{jobBusiType} and SPRING_ID = #{springID}
+    </delete>
+    
+</mapper>

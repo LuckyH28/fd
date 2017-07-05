@@ -1,0 +1,112 @@
+package com.aisino.domain.busi.service.impl;
+
+import com.aisino.domain.busi.dao.IScheduleJobDao;
+import com.aisino.domain.busi.service.IScheduleService;
+import com.aisino.domain.protocol.bean.busi.ScheduleJobEntity;
+import com.aisino.domain.task.ScheduleJobServer;
+import com.aisino.domain.zookeeper.core.LeaderDispatch;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+
+/**
+ * DESCRIPTION：distributed task timer implementation
+ *
+ * @author LuckyH
+ * @create 2017-03-23 15:46
+ **/
+
+@Service("scheduleService")
+public class ScheduleServiceImpl implements IScheduleService {
+
+    private static final Logger logger = LogManager.getLogger(ScheduleServiceImpl.class);
+
+    private static boolean flag = false;
+    
+    @Autowired
+    private ScheduleJobServer scheduleJobServer;
+
+    @Autowired
+    private IScheduleJobDao scheduleJobDao;
+    
+    @Autowired
+    private LeaderDispatch zkLeaderDispatch;
+    /**
+     * 初始化定时器
+     *
+     * @return
+     */
+    @Override
+    public boolean initScheduleJob() throws Exception{
+
+    	if(zkLeaderDispatch.isLeader()){
+	        List<ScheduleJobEntity> scheduleJobEntityList = scheduleJobDao.queryAllScheduleJobs();
+	        for (ScheduleJobEntity scheduleJob:scheduleJobEntityList
+	             ) {
+	            scheduleJobServer.createTask(scheduleJob);
+	        }
+    	}
+        return true;
+    }
+
+    /**
+     * 创建定时器
+     *
+     * @return
+     * @throws Exception 
+     */
+    @Override
+    public boolean createScheduleJob(ScheduleJobEntity scheduleJob) throws Exception {
+    	
+        scheduleJobServer.createTask(scheduleJob);
+        scheduleJobDao.saveScheduleJob(scheduleJob);
+        flag = true;
+     
+        return flag;
+    }
+
+    /**
+     * 删除定时器
+     *
+     * @return
+     */
+    @Override
+    public boolean deleteScheduleJob(ScheduleJobEntity scheduleJob) throws Exception{
+    	
+        scheduleJobServer.deleteTask(scheduleJob);
+        scheduleJobDao.deleteScheduleJob(scheduleJob);
+        flag = true;
+        return flag;
+    }
+
+    /**
+     * 更新定时器
+     *
+     * @return
+     */
+    @Override
+    public boolean updateScheduleJob(ScheduleJobEntity scheduleJob) throws Exception{
+    	scheduleJobServer.deleteTask(scheduleJob);
+        scheduleJobServer.createTask(scheduleJob);
+        
+        scheduleJobDao.updateScheduleJob(scheduleJob);
+        flag = true;
+        return flag;
+    }
+
+    /**
+     * 查询定时器
+     *
+     * @return
+     * @throws Exception 
+     */
+    @Override
+    public List<ScheduleJobEntity> queryScheduleJob() throws Exception {
+    	
+    	return scheduleJobServer.queryTask();
+    }
+}

@@ -1,0 +1,225 @@
+package com.aisino.domain.Servlet;
+
+import com.aisino.domain.busi.service.IBusiService;
+
+import static com.aisino.domain.common.util.ReturnCodeEnum.*;
+
+import com.aisino.domain.common.util.BusiConstant;
+import com.aisino.domain.common.util.CommonUtil;
+import com.aisino.domain.common.util.GlobalVariable;
+import com.aisino.domain.protocol.bean.Data;
+import com.aisino.domain.protocol.bean.DataDescription;
+import com.aisino.domain.protocol.bean.GlobalInfo;
+import com.aisino.domain.protocol.bean.InterfaceInfo;
+import com.aisino.domain.protocol.bean.ReturnStateInfo;
+import com.aisino.domain.protocol.bean.busi.QueueInfoEntity;
+import com.aisino.domain.protocol.bean.busi.RequestBusiEntity;
+import com.aisino.domain.protocol.bean.busi.ResponseInfoEntity;
+import com.aisino.domain.protocol.bean.busi.ScheduleJobEntity;
+import com.google.gson.JsonSyntaxException;
+
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang.StringUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.eclipse.paho.client.mqttv3.MqttException;
+import org.springframework.context.ApplicationContext;
+import org.springframework.web.context.WebApplicationContext;
+import org.springframework.web.context.support.WebApplicationContextUtils;
+
+import javax.servlet.ServletContext;
+import javax.servlet.ServletException;
+import javax.servlet.ServletInputStream;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.util.Date;
+
+/**
+ * Created by LuckyH on 2017-03-15.
+ */
+public class EntranceServlet extends HttpServlet {
+
+    /**
+	 * 
+	 */
+	private static final long serialVersionUID = 1891622684270253336L;
+
+	private static final Logger logger = LogManager.getLogger(EntranceServlet.class.getName());
+
+    private String dateByFormat;
+    private IBusiService busiService;
+    private static ResponseInfoEntity responseInfoEntity = new ResponseInfoEntity();
+    
+    private static GlobalInfo globalInfo = new GlobalInfo();
+    private static ReturnStateInfo returnStateInfo = new ReturnStateInfo();
+    private static DataDescription dataDescription = new DataDescription();
+    private static Data data = new Data();
+    private static InterfaceInfo interfaceInfo = new InterfaceInfo();
+
+    /**
+     * EntranceServlet初始化
+     * @throws ServletException
+     */
+    public void init() throws ServletException {
+    	ServletContext servletContext = this.getServletContext(); 
+		WebApplicationContext context = WebApplicationContextUtils.getWebApplicationContext(servletContext); 
+		busiService = (IBusiService) context.getBean("busiService");
+        try {
+        	busiService.initMqListen();
+        	busiService.initMqttServer();
+            logger.info("--线程(ID:" + Thread.currentThread().getId() +"),MqttServer初始化成功，完成Broker的连接建立及系统主题订阅");
+        } catch (MqttException e) {
+            logger.error("--线程(ID:" + Thread.currentThread().getId() +"),MqttServer初始化失败，异常信息为:"+e);
+        } catch (Exception e){
+        	logger.error("--线程(ID:" + Thread.currentThread().getId() +"),初始化失败，异常信息为:"+e);
+        }
+    }
+
+    /**
+     * EntranceServlet注销
+     */
+    public void destroy() {
+
+    }
+
+    protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+    	
+    	String responseXML = "";
+    	dateByFormat = CommonUtil.getDateByFormat(new Date(),"yyyy/MM/dd HH:mm:ss");
+        long start = System.currentTimeMillis();
+    	try{
+            //获取请求报文,并设置编码方式
+            request.setCharacterEncoding(GlobalVariable.CHARSET);
+            response.setCharacterEncoding(GlobalVariable.CHARSET);
+            ServletInputStream inputStream = request.getInputStream();
+            String requestXML = IOUtils.toString(inputStream,GlobalVariable.CHARSET);
+            IOUtils.closeQuietly(inputStream);
+
+            
+            if(!StringUtils.isEmpty(requestXML)){
+                logger.info("--线程(ID:" + Thread.currentThread().getId()+")，接口调用开始，请求报文如下:\n" + requestXML);
+                ApplicationContext ac = WebApplicationContextUtils.getWebApplicationContext(request.getSession().getServletContext());
+                //处理请求，返回响应报文
+                	responseInfoEntity = process(requestXML,ac);
+            }else{
+            	 responseInfoEntity.setCode(RequestIsEmpty.getCode());
+                 responseInfoEntity.setMessage(RequestIsEmpty.getMessage());
+            }
+    		
+    	}catch(Exception e){
+    		
+    	}finally{
+    		
+    		 responseXML = CommonUtil.objectToGson(responseInfoEntity);
+        	 logger.info("--线程(ID:" + Thread.currentThread().getId()+")，接口调用结束，响应报文如下：\n" + responseXML);
+    		  //向请求端发回反馈信息
+            PrintWriter out = response.getWriter();
+            response.setContentType("text/html; charset=utf-8"); 
+            out.print(responseXML);
+            out.flush();
+            out.close();
+
+            long end = System.currentTimeMillis();
+
+            logger.debug("--线程(ID:" + Thread.currentThread().getId()+")，从接收‘请求数据’到‘业务处理’，最后‘返回响应数据’共耗时：" + (end-start) + "毫秒---\n\n\n");
+    	}
+    	
+    	
+    	
+    	
+       
+      
+
+    }
+
+    protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        this.doPost(request,response);
+    }
+
+
+    private ResponseInfoEntity process(String requestXml,ApplicationContext ac){
+
+        busiService = (IBusiService) ac.getBean("busiService");
+        try {
+            long start = System.currentTimeMillis();
+            long end = System.currentTimeMillis();
+            logger.info("--线程(ID:" + Thread.currentThread().getId() + "),解析请求XML报文共耗时：" + (end-start) + "毫秒---\n");
+
+            final RequestBusiEntity busiEntity = (RequestBusiEntity) CommonUtil.gsonToObject(requestXml, RequestBusiEntity.class);
+
+            String content = CommonUtil.decode(busiEntity.getContent(),busiEntity.getEncrypt());
+            /**
+             * 根据busiType处理不同业务
+             */
+            switch (busiEntity.getBusiType()) {
+			case BusiConstant.BUSI_TYPE_QUERY_DEVICE_STATUS:
+				/*-------设备状态查询--------*/
+				 logger.info("--线程(ID:" + Thread.currentThread().getId() + "),【设备状态查询】Begin"+ "\n\n\n");
+	                responseInfoEntity =  busiService.queryDeviceInfo();
+	                logger.info("--线程(ID:" + Thread.currentThread().getId() + "),【设备状态查询】End"+ "\n\n\n");
+				break;
+			case BusiConstant.BUSI_TYPE_INIT_QUEUE:
+				/*-------队列管理--------*/
+                logger.info("--线程(ID:" + Thread.currentThread().getId() + "),【队列管理】Begin"+ "\n\n\n");
+                final QueueInfoEntity queueInfoEntity = (QueueInfoEntity) CommonUtil.gsonToObject(busiEntity.getContent(), QueueInfoEntity.class);
+                responseInfoEntity =  busiService.initQueue(queueInfoEntity);
+                logger.info("--线程(ID:" + Thread.currentThread().getId() + "),，【队列管理】End"+ "\n\n\n");
+				break;
+				
+			case BusiConstant.BUSI_TYPE_INIT_TASK:
+				/*-------管理定时器--------*/
+                logger.info("--线程(ID:" + Thread.currentThread().getId() + "),【管理定时器】Begin"+ "\n\n\n");
+                final ScheduleJobEntity scheduleJobEntity = (ScheduleJobEntity) CommonUtil.gsonToObject(busiEntity.getContent(), ScheduleJobEntity.class);
+                responseInfoEntity = busiService.initTask(scheduleJobEntity);
+                logger.info("--线程(ID:" + Thread.currentThread().getId() + "),【管理定时器】End"+ "\n\n\n");
+				break;
+			case BusiConstant.BUSI_TYPE_PUBLIC_MESSAGE:
+				/*-------消息发布--------*/
+                logger.info("--线程(ID:" + Thread.currentThread().getId() + "),【消息发布】Begin"+ "\n\n\n");
+                responseInfoEntity = busiService.publicTopic();
+                logger.info("--线程(ID:" + Thread.currentThread().getId() + "),【消息发布】End"+ "\n\n\n");
+				break;
+			case BusiConstant.BUSI_TYPE_SUBSCRIBE_TOPIC:
+				/*-----------消息订阅------------*/
+                logger.info("--线程(ID:" + Thread.currentThread().getId() + "),【消息订阅】Begin"+ "\n\n\n");
+                responseInfoEntity =  busiService.initQueue(null);
+                logger.info("--线程(ID:" + Thread.currentThread().getId() + "),【消息订阅】End"+ "\n\n\n");
+				break;
+			case BusiConstant.BUSI_TYPE_UNSUBSCRIBE_TOPIC:
+				/*-------取消消息订阅--------*/
+                logger.info("--线程(ID:" + Thread.currentThread().getId() + "),【取消消息订阅】Begin"+ "\n\n\n");
+               responseInfoEntity =  busiService.initQueue(null);
+                logger.info("--线程(ID:" + Thread.currentThread().getId() + "),【取消消息订阅】End"+ "\n\n\n");
+				break;
+			
+			default:
+				/*--------业务不存在（即接口编码错误，系统不支持此接口）--------*/
+                logger.info("--线程(ID:" + Thread.currentThread().getId() + "),【非法业务编码】Begin"+ "\n\n\n");
+                responseInfoEntity.setCode("9999");
+                responseInfoEntity.setMessage("非法业务类型！");
+                logger.info("--线程(ID:" + Thread.currentThread().getId() + "),【非法业务编码】End"+ "\n\n\n");
+				break;
+			}
+            
+
+        } catch (JsonSyntaxException jsonException){	// 发票数据不合法
+            logger.error("--线程(ID:" + Thread.currentThread().getId() + "),业务处理发生异常，详情为：------------------------------"+jsonException);
+            responseInfoEntity.setCode(JsonSyntaxException.getCode());
+            responseInfoEntity.setMessage(JsonSyntaxException.getMessage());
+
+        } catch (Exception e){
+        	  logger.error("--线程(ID:" + Thread.currentThread().getId() + "),业务处理发生异常，详情为：------------------------------"+e);
+        	  responseInfoEntity.setCode("9999");
+              responseInfoEntity.setMessage("其它异常！");
+        } finally {
+        	
+            return responseInfoEntity;
+            
+        }
+
+    }
+}

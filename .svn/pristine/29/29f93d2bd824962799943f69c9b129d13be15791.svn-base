@@ -1,0 +1,6 @@
+#Mysql JDBC ConnectionInfo
+jdbc.driverClassName=com.mysql.jdbc.Driver
+#jdbc.url=jdbc\:mysql\://192.168.15.179\:3306/51saas?serverTimezone\=UTC&useUnicode\=true&characterEncoding\=UTF-8&useSSL\=false
+jdbc.url=jdbc\:mysql\://172.17.60.92\:3306/51saas?serverTimezone\=UTC&useUnicode\=true&characterEncoding\=UTF-8&useSSL\=false
+jdbc.username=root
+jdbc.password=123456

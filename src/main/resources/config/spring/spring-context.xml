@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+							http://www.springframework.org/schema/beans/spring-beans.xsd
+
+						 	http://www.springframework.org/schema/context
+						 	http://www.springframework.org/schema/context/spring-context.xsd ">
+     <context:component-scan base-package="com.aisino.domain"/>
+    <context:property-placeholder location="classpath:general.properties"/>
+    
+  <!--  &lt;!&ndash; 激活annotation功能 &ndash;&gt;
+	<context:annotation-config />
+	&lt;!&ndash; 激活annotation功能 &ndash;&gt;
+	<context:config.spring-configured />-->
+	<!--<context:component-scan base-package="com.aisino.domain"/>-->
+
+    <import resource="jdbc.xml"/>
+    <import resource="task.xml"/>
+    <import resource="curator.xml"/>
+    <import resource="rabbitmq.xml"/>
+    <import resource="redis.xml"/>
+</beans>

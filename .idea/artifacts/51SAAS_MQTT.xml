@@ -1,0 +1,16 @@
+<component name="ArtifactManager">
+  <artifact type="exploded-war" name="51SAAS_MQTT">
+    <output-path>$PROJECT_DIR$/out/artifacts/51SAAS_MQTT</output-path>
+    <root id="root">
+      <element id="directory" name="WEB-INF">
+        <element id="directory" name="classes">
+          <element id="module-output" name="51SAAS_MQTT" />
+        </element>
+        <element id="directory" name="lib">
+          <element id="library" level="project" name="lib" />
+        </element>
+      </element>
+      <element id="javaee-facet-resources" facet="51SAAS_MQTT/web/Web" />
+    </root>
+  </artifact>
+</component>

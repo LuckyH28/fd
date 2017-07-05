@@ -1,0 +1,46 @@
+package com.aisino.domain.busi.service;
+
+import java.util.List;
+
+import com.aisino.domain.protocol.bean.busi.ScheduleJobEntity;
+
+/**
+ * DESCRIPTION：Distributed task timer
+ *
+ * @author LuckyH
+ * @create 2017-03-23 15:40
+ **/
+public interface IScheduleService {
+
+    /**
+     * 初始化定时器
+     * @return
+     */
+    public boolean initScheduleJob() throws Exception;
+
+    /**
+     * 创建定时器
+     * @return
+     * @throws Exception 
+     */
+    public boolean createScheduleJob(ScheduleJobEntity scheduleJob) throws Exception;
+
+    /**
+     * 删除定时器
+     * @return
+     */
+    public boolean deleteScheduleJob(ScheduleJobEntity scheduleJob)throws Exception;
+
+    /**
+     * 更新定时器
+     * @return
+     */
+    public boolean updateScheduleJob(ScheduleJobEntity scheduleJob)throws Exception;
+
+    /**
+     * 查询定时器
+     * @return
+     * @throws Exception 
+     */
+    public List<ScheduleJobEntity> queryScheduleJob() throws Exception;
+}

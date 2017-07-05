@@ -1,0 +1,77 @@
+package com.aisino.domain.task;
+
+
+import java.util.ArrayList;
+import java.util.List;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import static com.aisino.domain.common.enums.ScheduleJobBusiEnum.ScheduleJob_Republic;
+import cn.uncode.schedule.ConsoleManager;
+import cn.uncode.schedule.zk.TaskDefine;
+
+import com.aisino.domain.busi.service.IScheduleService;
+import com.aisino.domain.protocol.bean.busi.ScheduleJobEntity;
+
+@Service("scheduleJobServer")
+public class ScheduleJobServer {
+	
+	private static final Logger logger = LogManager.getLogger(ScheduleJobServer.class);
+
+	@Autowired
+	private IScheduleService scheduleService;
+	
+	private static TaskDefine taskDefine = new TaskDefine();
+	
+	public void createTask(ScheduleJobEntity scheduleJob) throws Exception {
+		
+	        taskDefine.setTargetBean(scheduleJob.getSpringID());
+	        taskDefine.setTargetMethod(ScheduleJob_Republic.getMethod());
+	        taskDefine.setCronExpression(scheduleJob.getCronExpression());
+	    /*   ;
+	        System.out.println( ConsoleManager.getScheduleManager().getScheduleDataManager().selectTask());
+	        ConsoleManager.getScheduleManager().getScheduleDataManager().checkLocalTask(arg0)*/
+            ConsoleManager.getScheduleManager().getScheduleDataManager().addTask(taskDefine);
+            logger.info("--线程(ID:" + Thread.currentThread().getId()+").定时器创建成功!");
+
+	}
+	
+	public void deleteTask(ScheduleJobEntity scheduleJob) throws Exception{
+		
+		taskDefine.setTargetMethod(ScheduleJob_Republic.getMethod());
+		taskDefine.setTargetBean(scheduleJob.getSpringID());
+		taskDefine.setCronExpression(scheduleJob.getCronExpression());
+		ConsoleManager.getScheduleManager().getScheduleDataManager().delTask(taskDefine.getTargetBean(), taskDefine.getTargetMethod());
+		logger.info("--线程(ID:" + Thread.currentThread().getId()+").定时器删除成功!");
+		//删除定时器
+		
+	}
+	
+	public List<ScheduleJobEntity> queryTask() throws Exception{
+		List<TaskDefine> taskList = ConsoleManager.getScheduleManager().getScheduleDataManager().selectTask();
+		List<ScheduleJobEntity> schedulList = new  ArrayList<ScheduleJobEntity>();
+		int index=0;
+		for (TaskDefine taskDefine : taskList) {
+			schedulList.get(index).setSpringID(taskList.get(index).getTargetBean());
+			schedulList.get(index).setCronExpression(taskList.get(index).getCronExpression());
+		}
+		return schedulList;
+		
+	}
+
+	/*public void updateTask(ScheduleJobEntity scheduleJob) throws Exception{
+		
+		//先删后添加
+		createTask(scheduleJob);
+		deleteTask(scheduleJob);
+		taskDefine.setTargetMethod(GlobalVariable.SCHEDULE_JOB_METHOD);
+		taskDefine.setTargetBean(scheduleJob.getSpringID());
+		taskDefine.setCronExpression(scheduleJob.getCronExpression());
+		ConsoleManager.getScheduleManager().getScheduleDataManager().delTask(taskDefine.getTargetBean(), taskDefine.getTargetMethod());
+		ConsoleManager.getScheduleManager().getScheduleDataManager().addTask(taskDefine);
+		logger.info("--线程(ID:" + Thread.currentThread().getId()+").定时器更新成功!");
+	}*/
+}

@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:p="http://www.springframework.org/schema/p"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+
+
+    <!--缓存redis配置 -->
+    <bean id="jedisPoolConfig" class="redis.clients.jedis.JedisPoolConfig">
+        <property value="true" name="testOnBorrow" />
+        <property value="8024" name="maxTotal" />
+        <property value="50" name="maxIdle" />
+        <property value="8" name="minIdle" />
+        <property value="10000" name="maxWaitMillis" />
+        <property value="true" name="testOnReturn" />
+        <property value="true" name="testWhileIdle" />
+        <property value="30000" name="timeBetweenEvictionRunsMillis" />
+        <property value="10" name="numTestsPerEvictionRun" />
+    </bean>
+    <!--缓存redis集群配置 -->
+
+
+    <bean id="jedisConnectionFactory" class="org.springframework.data.redis.connection.jedis.JedisConnectionFactory">
+        <property name="hostName" value="${redis.ip}" />
+        <property name="port" value="${redis.port}" />
+        <property name="password" value="${redis.password}" />
+        <property name="poolConfig" ref="jedisPoolConfig" />
+        <property name="usePool" value="true" />
+    </bean>
+
+    <!-- <bean id="redisTemplate" class="org.springframework.data.redis.core.RedisTemplate"   p:connectionFactory-ref="jedisConnectionFactory"/> -->
+   
+       <bean id="redisTemplate" class="org.springframework.data.redis.core.RedisTemplate"
+          p:connectionFactory-ref="jedisConnectionFactory">
+        <property name="enableTransactionSupport" value="true"/>
+        <property name="keySerializer">
+        <bean class="org.springframework.data.redis.serializer.StringRedisSerializer"></bean>
+        </property>
+        <property name="hashKeySerializer">
+            <bean class="org.springframework.data.redis.serializer.StringRedisSerializer"></bean>
+        </property>
+        <property name="hashValueSerializer">
+            <bean class="org.springframework.data.redis.serializer.JdkSerializationRedisSerializer"></bean>
+        </property>
+    </bean>
+
+    <bean id="stringRedisTemplate" class="org.springframework.data.redis.core.StringRedisTemplate"
+          p:connectionFactory-ref="jedisConnectionFactory">
+        <property name="hashValueSerializer">
+            <bean class="org.springframework.data.redis.serializer.StringRedisSerializer"></bean>
+        </property>
+    </bean>
+   
+   
+   
+   <!-- <bean id="redisDao" class="com.aisino.domain.busi.dao.Impl">
+        <property name="redisTemplate" ref="redisTemplate" />
+    </bean>-->
+    <!--<bean id="messageDelegateListener" class="com.aisino.dao.impl.MessageDelegateListenerImpl"/>-->
+<!--    <bean id="serialization" class="org.springframework.data.redis.serializer.JdkSerializationRedisSerializer" />-->
+
+   <!-- <bean id="messageListener" class="org.springframework.data.redis.listener.adapter.MessageListenerAdapter">
+        <property name="delegate" ref="messageDelegateListener" />
+        <property name="serializer" ref="serialization" />
+    </bean>-->
+
+    <bean id="redisContainer" class="org.springframework.data.redis.listener.RedisMessageListenerContainer">
+        <property name="connectionFactory" ref="jedisConnectionFactory"/>
+       <!-- <property name="messageListeners">
+            &lt;!&ndash; map of listeners and their associated topics (channels or/and patterns) &ndash;&gt;
+            <map>
+                <entry key-ref="messageListener">
+                    <bean class="org.springframework.data.redis.listener.ChannelTopic">
+                        <constructor-arg value="java" />
+                    </bean>
+                </entry>
+            </map>
+        </property>-->
+    </bean>
+
+</beans>

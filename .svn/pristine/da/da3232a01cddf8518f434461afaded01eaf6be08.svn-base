@@ -1,0 +1,80 @@
+package com.aisino.domain.busi.service.impl;
+
+
+import com.aisino.domain.busi.service.IDeviceManagerService;
+import com.aisino.domain.common.util.CommonUtil;
+import com.aisino.domain.common.util.GlobalVariable;
+import com.aisino.domain.mqtt.core.MqttServer;
+import com.aisino.domain.busi.service.IMqttService;
+import com.aisino.domain.protocol.bean.busi.TopicInfoEntity;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.reflect.TypeToken;
+
+import org.eclipse.paho.client.mqttv3.MqttException;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import java.lang.reflect.Type;
+import java.util.Map;
+
+/**
+ * Created by LuckyH on 2017-03-04.
+ *
+ * 实现mqtt消息推送的功能，包括建立连接、订阅主题、发布消息
+ *
+ */
+@Service("mqttService")
+public class MqttServiceImpl implements IMqttService {
+
+    @Autowired
+    private MqttServer mqttServer;
+
+    @Autowired
+    private IDeviceManagerService deviceManagerService;
+    
+
+    /**
+     * 发布消息
+     * @param topic 消息主题
+     * @param message 消息内容
+     * @throws MqttException 异常
+     */
+    @Override
+    public void pubMsg(String topic, String message) throws MqttException {
+        mqttServer.pubMessage(topic,message);
+    }
+
+    /**
+     * 订阅主题
+     * @param topic 订阅的主题名称
+     * @throws MqttException 异常
+     */
+    @Override
+    public void subTopic(String topic) throws MqttException {
+
+        mqttServer.subTopic(topic);
+
+    }
+
+    /**
+     * 建立长连接
+     * @throws MqttException
+     */
+    @Override
+    public void doConnect() throws MqttException,Exception {
+    	if(!deviceManagerService.isOnline(GlobalVariable.clientId)){
+    		mqttServer.doConnectToBroker();
+    	}
+    }
+
+	@Override
+	public void init() throws MqttException, Exception {
+		
+		//与Broker初始建立连接
+    	mqttServer.doConnectToBroker();
+        //订阅系统主题
+    	mqttServer.subSysTopic();
+		
+	};
+}
